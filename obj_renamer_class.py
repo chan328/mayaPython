@@ -5,7 +5,7 @@ SUFFIX = {"mesh": "geo",
                   "camera": None}
 
 DEFULAT = "grp"
-
+    
 class obj_reamer(object):
     def rename(self, selection=False):
         objects = cmds.ls(selection=selection, dag=True)
