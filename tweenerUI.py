@@ -61,3 +61,31 @@ def tween(percentage, obj=None, attrs=None, selection=True):
         currentValue = previous_value + weight_difference
 
         cmds.setKeyframe(attrFull, time=currentTime, value=currentValue)
+
+
+class TweenWindow(object):
+
+    windowName = "Tweener Window"
+
+    def show(self):
+        if cmds.window(self.windowName, query=True, exists=True):
+            cmds.deleteUI(self.windowName)
+
+        cmds.window(self.windowName)
+        self.buildUI()
+        cmds.showWindow()
+
+    def buildUI(self):
+        column = cmds.columnLayout()
+        cmds.text(label="Use this silder to set the tween amount")
+        row = cmds.lowLayout(numberOfColumns=2)
+        self.slider = cmds.floatslider(min=0, max=100, value=50, step=1, changeCommand=tween)
+        cmds.button(label="Reset", command=self.reset)
+
+        cmds.button(label="close", command=self.close)
+
+    def reset(self, *args):
+        cmds.floatsilder(self.slider, edit=True, value=50)
+
+    def close(self, *args):
+        cmds.deleteUI(self.windowName)
