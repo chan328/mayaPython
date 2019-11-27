@@ -16,13 +16,11 @@ class Gear(object):
         spans = teeth * 2
 
         self.createPipe(spans)
-
+        print("it's reloaded")
         self.makeTeeth(teeth=teeth, length=length)
 
     def createPipe(self, spans):
-        self.transform, self.shape = cmds.polyPipe(subdivisionAxis=spans)
-        if(self.transform is None):
-            print("self.transform is None")
+        self.transform, self.shape = cmds.polyPipe(subdivisionsAxis=spans)
 
         for node in cmds.listConnections('%s.inMesh' % self.transform):
             if cmds.objectType(node) == 'polyPipe':
@@ -38,6 +36,7 @@ class Gear(object):
         self.extrude = cmds.polyExtrudeFacet(localTranslateZ=length)[0]
         cmds.select(clear=True)
 
+    def changeLength(self, length=0.3):
         cmds.polyExtrudeFacet(self.extrude, edit=True, ltz=length)
 
     def changeTeeth(self, teeth=10, length=0.3):

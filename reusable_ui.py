@@ -8,20 +8,14 @@ class BaseWindow(object):
 
     def show(self):
         if cmds.window(self.windowName, query=True, exists=True):
-            cmds.deleteUI(self.windowName)
+            cmds.close()
 
         cmds.window(self.windowName)
         self.buildUI()
         cmds.showWindow()
 
     def buildUI(self):
-        column = cmds.columnLayout()
-        cmds.text(label="Use this silder to set the tween amount")
-        row = cmds.lowLayout(numberOfColumns=2)
-        self.slider = cmds.floatslider(min=0, max=100, value=50, step=1, changeCommand=tween)
-        cmds.button(label="Reset", command=self.reset)
-
-        cmds.button(label="close", command=self.close)
+        pass
 
     def reset(self, *args):
         pass
@@ -65,13 +59,6 @@ class GearUI(BaseWindow):
         cmds.setParent(column)
         cmds.button(label="Close", command=self.close)
 
-
-    def modifyGear(self, teeth):
-        if self.gear:
-            self.gear.changeTeeth(teeth=teeth)
-
-        cmds.text(self.label, edit=True, label=teeth)
-
     def makeGear(self, *args):
         teeth = cmds.intSlider(self.slider, query=True, value=True)
 
@@ -79,7 +66,13 @@ class GearUI(BaseWindow):
 
         self.gear.create(teeth=teeth)
 
+    def modifyGear(self, teeth):
+        cmds.text(self.label, edit=True, label=str(teeth))
+
+        if self.gear:
+            self.gear.changeTeeth(teeth=teeth)
+
     def reset(self, *args):
         self.gear = None
         cmds.intSlider(self.slider, edit=True, value=10)
-        cmds.text(self.label, edit=True, label=10)
+        cmds.text(self.label, edit=True, label=str(10))
