@@ -14,10 +14,15 @@ class Gear(object):
 
     def create(self, teeth=10, length=0.3):
         spans = teeth * 2
+
+        self.createPipe(spans)
+
         self.makeTeeth(teeth=teeth, length=length)
 
     def createPipe(self, spans):
         self.transform, self.shape = cmds.polyPipe(subdivisionAxis=spans)
+        if(self.transform is None):
+            print("self.transform is None")
 
         for node in cmds.listConnections('%s.inMesh' % self.transform):
             if cmds.objectType(node) == 'polyPipe':

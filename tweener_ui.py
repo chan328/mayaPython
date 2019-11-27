@@ -6,7 +6,7 @@ def tween(percentage, obj=None, attrs=None, selection=True):
         raise ValueError("No object given to tween")
 
     # if you got this error, you didn't select any obj in maya
-    # Error: IndexError: file C:/Users/Chan/Documents/maya/2018/scripts\tweenerUI.py line 9: list index out of range
+    # Error: IndexError: file C:/Users/Chan/Documents/maya/2018/scripts\tweener_ui.py line 9: list index out of range
     if not obj:
         obj = cmds.ls(selection=True)[0]
 
