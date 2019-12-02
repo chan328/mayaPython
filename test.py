@@ -1,5 +1,4 @@
-from conLibrary import controllerLibrary
-reload(controllerLibrary)
+from conLibrary import libraryUI
+reload(libraryUI)
 
-lib = controllerLibrary.ControllerLibrary()
-lib.save('screenTest')
+ui = libraryUI.showUI()

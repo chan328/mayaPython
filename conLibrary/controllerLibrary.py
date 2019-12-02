@@ -1,5 +1,5 @@
 from maya import cmds
-import  os
+import os
 import json
 import pprint
 
