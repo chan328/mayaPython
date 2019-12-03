@@ -1,6 +1,7 @@
 from controllerLibrary import ControllerLibrary
 from PySide2 import QtWidgets, QtCore, QtGui
 
+
 class ControllerLibraryUI(QtWidgets.QDialog):
 
     def __init__(self):
@@ -8,10 +9,10 @@ class ControllerLibraryUI(QtWidgets.QDialog):
 
         self.setWindowTitle('Controller Library UI')
         self.library = ControllerLibrary()
-        self.buildUI()
+        self.build_ui()
         self.populate()
 
-    def buildUI(self):
+    def build_ui(self):
         layout = QtWidgets.QVBoxLayout(self)
 
         save_widget = QtWidgets.QWidget()
@@ -24,8 +25,13 @@ class ControllerLibraryUI(QtWidgets.QDialog):
         save_button = QtWidgets.QPushButton('save')
         save_layout.addWidget(save_button)
 
+        size = 64
+        buffer = 12
         self.list_widget = QtWidgets.QListWidget()
         self.list_widget.setViewMode(QtWidgets.QListWidget.IconMode)
+        self.list_widget.setIconSize(QtCore.QSize(size, size))
+        self.list_widget.setResizeMode(QtWidgets.QListWidget.Adjust)
+        self.list_widget.setGridSize(QtCore.QSize(size+buffer, size+buffer))
         save_layout.addWidget(self.list_widget)
 
         button_widget = QtWidgets.QWidget()
@@ -40,7 +46,6 @@ class ControllerLibraryUI(QtWidgets.QDialog):
 
         close_button = QtWidgets.QPushButton('Close')
         button_layout.addWidget(close_button)
-
 
     def populate(self):
         self.library.find()
