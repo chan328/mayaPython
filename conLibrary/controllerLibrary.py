@@ -48,6 +48,12 @@ class ControllerLibrary(dict):
         # updating every time when you saved
 
     def find(self, directory=DIRECTORY):
+        """
+        find controller on disk
+        :param directory: the dict to serach in
+        :return:
+        """
+        self.clear()
         if not os.path.exists(directory):
             return
 
@@ -78,8 +84,6 @@ class ControllerLibrary(dict):
             info['path'] = path
 
             self[name] = info
-
-        pprint.pprint(self)
 
     def load(self, name):
         path = self[name]['path']
