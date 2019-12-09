@@ -1,7 +1,8 @@
 from maya import cmds
+from operator import eq
 import os
 import json
-import pprint
+
 
 USERAPPDIR = cmds.internalVar(userAppDir=True)
 DIRECTORY = os.path.join(USERAPPDIR, 'controllerLibrary')
@@ -22,6 +23,12 @@ def create_directory(directory=DIRECTORY):
 class ControllerLibrary(dict):
 
     def save(self, name, directory=DIRECTORY, screenshot=True, **info):
+        files = os.listdir(directory)
+        maya_files = [f for f in files if f.endswith('.ma')]
+        for ma in maya_files:
+            if eq(ma, name+".ma"):
+                raise NameError("There is already same name in files. Please use other name or delete that file.")
+
         create_directory(directory)
 
         path = os.path.join(directory, '%s.ma' % name)
@@ -77,8 +84,12 @@ class ControllerLibrary(dict):
                 info = {}
 
             screenshot = '%s.jpg' % name
+            default_screenshot = 'C:\\Users\\Chan\\Documents\\maya\\2018\\scripts\\image\\defaultimage.jpg'
             if screenshot in files:
                 info['screenshot'] = os.path.join(directory, name)
+            else:
+                # if screenShot doesn't exist use default image
+                info['screenshot'] = default_screenshot
 
             info['name'] = name
             info['path'] = path
