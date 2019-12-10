@@ -33,6 +33,7 @@ class LightManager(QtWidgets.QDialog):
         # row 0 column 1
 
         scroll_widget = QtWidgets.QWidget()
+        scroll_widget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         self.scrollLayout = QtWidgets.QVBoxLayout(scroll_widget)
 
         scroll_area = QtWidgets.QScrollArea()
