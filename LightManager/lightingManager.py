@@ -21,7 +21,27 @@ else:
 import pymel.core as pm
 
 
-class LightManager(QtWidgets.QDialog):
+def get_maya_main_window():
+    win = omui.MQtUtil_mainWindow()
+    # memory address
+    ptr = wrapInstance(long(win), QtWidgets.QMainWindow)
+    return ptr
+
+
+def get_dock(name='LightingManagerDock'):
+    del_dock(name)
+    ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label="Lighting Manager")
+    qt_control = omui.MQtUtil_findControl(ctrl)
+    ptr = wrapInstance(long(qt_control), QtWidgets.QWidget)
+    return ptr
+
+
+def del_dock(name='LightingManagerDock'):
+    if pm.workspaceControl(name, query=True, exists=True):
+        pm.deleteUI(name)
+
+
+class LightManager(QtWidgets.QWidget):
     lightTypes = {
         "Point Light": pm.pointLight,
         "Spot Light": pm.spotLight,
@@ -30,12 +50,32 @@ class LightManager(QtWidgets.QDialog):
         "Volume Light": partial(pm.shadingNode, 'volumeLight', asLight=True)
     }
 
-    def __init__(self):
-        super(LightManager, self).__init__()
-        self.setWindowTitle('Lighting Manager')
+    def __init__(self, dock=True):
+        # parent = get_maya_main_window()
+        if dock:
+            parent = get_dock()
+        else:
+            del_dock()
+
+            try:
+                pm.deleteUI('LightingManager')
+            except:
+                logger.debug('no previous UI exists')
+
+            parent = QtWidgets.QDialog(parent=get_maya_main_window())
+            parent.setObjectName('lightingManager')
+            parent.setWindowTitle('Lighting Manager')
+            layout = QtWidgets.QVBoxLayout(parent)
+
+        super(LightManager, self).__init__(parent=parent)
+        # self.setWindowTitle('Lighting Manager')
 
         self.build_ui()
         self.populate()
+
+        self.parent().layout().addWidget(self)
+        if not dock:
+            parent.show()
 
     def populate(self):
         while self.scrollLayout.count():
