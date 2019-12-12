@@ -1,7 +1,7 @@
 """Minimal Python 2 & 3 shim around all Qt bindings
 
 DOCUMENTATION
-    Qt.py was born in the film and visual effects industry to address
+    qt.py was born in the film and visual effects industry to address
     the growing need for the development of software capable of running
     with more than one flavour of the Qt bindings for Python - PySide,
     PySide2, PyQt4 and PyQt5.
@@ -25,7 +25,7 @@ DOCUMENTATION
         >> app.exec_()
 
     All members of PySide2 are mapped from other bindings, should they exist.
-    If no equivalent member exist, it is excluded from Qt.py and inaccessible.
+    If no equivalent member exist, it is excluded from qt.py and inaccessible.
     The idea is to highlight members that exist across all supported binding,
     and guarantee that code that runs on one binding runs on all others.
 
@@ -44,7 +44,7 @@ import shutil
 import importlib
 
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 # Enable support for `from Qt import *`
 __all__ = []
@@ -54,7 +54,7 @@ QT_VERBOSE = bool(os.getenv("QT_VERBOSE"))
 QT_PREFERRED_BINDING = os.getenv("QT_PREFERRED_BINDING", "")
 QT_SIP_API_HINT = os.getenv("QT_SIP_API_HINT")
 
-# Reference to Qt.py
+# Reference to qt.py
 Qt = sys.modules[__name__]
 Qt.QtCompat = types.ModuleType("QtCompat")
 
@@ -67,7 +67,7 @@ except NameError:
 
 """Common members of all bindings
 
-This is where each member of Qt.py is explicitly defined.
+This is where each member of qt.py is explicitly defined.
 It is based on a "lowest common denominator" of all bindings;
 including members found in each of the 4 bindings.
 
@@ -679,6 +679,22 @@ _common_members = {
     ]
 }
 
+""" Missing members
+
+This mapping describes members that have been deprecated
+in one or more bindings and have been left out of the
+_common_members mapping.
+
+The member can provide an extra details string to be
+included in exceptions and warnings.
+"""
+
+_missing_members = {
+    "QtGui": {
+        "QMatrix": "Deprecated in PyQt5",
+    },
+}
+
 
 def _qInstallMessageHandler(handler):
     """Install a message handler that works in all bindings
@@ -735,7 +751,7 @@ def _wrapinstance(ptr, base=None):
 
     Usage:
         This mechanism kicks in under these circumstances.
-        1. Qt.py is using PySide 1 or 2.
+        1. qt.py is using PySide 1 or 2.
         2. A `base` argument is not provided.
 
         See :func:`QtCompat.wrapInstance()`
@@ -1206,7 +1222,7 @@ def _apply_site_config():
         # to _common_members are needed.
         pass
     else:
-        # Provide the ability to modify the dicts used to build Qt.py
+        # Provide the ability to modify the dicts used to build qt.py
         if hasattr(QtSiteConfig, 'update_members'):
             QtSiteConfig.update_members(_common_members)
 
@@ -1257,7 +1273,7 @@ def _setup(module, extras):
 
 
 def _reassign_misplaced_members(binding):
-    """Apply misplaced members from `binding` to Qt.py
+    """Apply misplaced members from `binding` to qt.py
 
     Arguments:
         binding (dict): Misplaced members
@@ -1395,7 +1411,7 @@ def _pyside2():
     These functions serve to test the existence of a binding
     along with set it up in such a way that it aligns with
     the final step; adding members from the original binding
-    to Qt.py
+    to qt.py
 
     """
 
@@ -1552,7 +1568,7 @@ def _pyqt4():
         try:
             sip.setapi(api, hint or 2)
         except AttributeError:
-            raise ImportError("PyQt4 < 4.6 isn't supported by Qt.py")
+            raise ImportError("PyQt4 < 4.6 isn't supported by qt.py")
         except ValueError:
             actual = sip.getapi(api)
             if not hint:
@@ -1650,7 +1666,7 @@ def _log(text):
 
 
 def _convert(lines):
-    """Convert compiled .ui file from PySide2 to Qt.py
+    """Convert compiled .ui file from PySide2 to qt.py
 
     Arguments:
         lines (list): Each line of of .ui file
@@ -1667,7 +1683,7 @@ def _convert(lines):
                             "QtCompat.translate")
         if "QtCore.SIGNAL" in line:
             raise NotImplementedError("QtCore.SIGNAL is missing from PyQt5 "
-                                      "and so Qt.py does not support it: you "
+                                      "and so qt.py does not support it: you "
                                       "should avoid defining signals inside "
                                       "your ui files.")
         return line
@@ -1681,7 +1697,7 @@ def _convert(lines):
 
 
 def _cli(args):
-    """Qt.py command-line interface"""
+    """qt.py command-line interface"""
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -1732,6 +1748,36 @@ def _cli(args):
             f.write("".join(lines))
 
         sys.stdout.write("Successfully converted \"%s\"\n" % args.convert)
+
+
+class MissingMember(object):
+    """
+    A placeholder type for a missing Qt object not
+    included in qt.py
+
+    Args:
+        name (str): The name of the missing type
+        details (str): An optional custom error message
+    """
+    ERR_TMPL = ("{} is not a common object across PySide2 "
+                "and the other Qt bindings. It is not included "
+                "as a common member in the qt.py layer")
+
+    def __init__(self, name, details=''):
+        self.__name = name
+        self.__err = self.ERR_TMPL.format(name)
+
+        if details:
+            self.__err = "{}: {}".format(self.__err, details)
+
+    def __repr__(self):
+        return "<{}: {}>".format(self.__class__.__name__, self.__name)
+
+    def __getattr__(self, name):
+        raise NotImplementedError(self.__err)
+
+    def __call__(self, *a, **kw):
+        raise NotImplementedError(self.__err)
 
 
 def _install():
@@ -1800,6 +1846,22 @@ def _install():
                 continue
 
             setattr(our_submodule, member, their_member)
+
+    # Install missing member placeholders
+    for name, members in _missing_members.items():
+        our_submodule = getattr(Qt, name)
+
+        for member in members:
+
+            # If the submodule already has this member installed,
+            # either by the common members, or the site config,
+            # then skip installing this one over it.
+            if hasattr(our_submodule, member):
+                continue
+
+            placeholder = MissingMember("{}.{}".format(name, member),
+                                        details=members[member])
+            setattr(our_submodule, member, placeholder)
 
     # Enable direct import of QtCompat
     sys.modules['Qt.QtCompat'] = Qt.QtCompat

@@ -1,7 +1,23 @@
-from PySide2 import QtCore
-from PySide2 import QtWidgets
-from PySide2 import QtGui
+from Qt import QtWidgets, QtCore, QtGui
 from functools import partial
+import Qt
+import logging
+from maya import OpenMayaUI as omui
+
+logging.basicConfig()
+logger = logging.getLogger('LightingManager')
+logger.setLevel(logging.DEBUG)
+
+if Qt.__binding__ == 'PySide2':
+    logger.debug('Using Pyside with shiboken')
+    from shiboken2 import wrapInstance
+elif Qt.__binding__.startwith('PyQt'):
+    logger.debug('Using PyQt with sip')
+    from sip import wrapinstance as wrapInstance
+else:
+    logger.debug('Using Pyside2 with shiboken')
+    from shiboken2 import wrapInstance
+
 import pymel.core as pm
 
 
@@ -150,14 +166,15 @@ class LightWidget(QtWidgets.QWidget):
         self.name.setChecked(not value)
 
     def delete_light(self):
-        self.setParent(None)
         # remove light manager
+        self.setParent(None)
         self.setVisible(False)
         self.deleteLater()
 
         pm.delete(self.light.getTransform())
 
-def showUI():
+
+def show_ui():
     ui = LightManager()
     ui.show()
     return ui
