@@ -23,21 +23,32 @@ import pymel.core as pm
 
 def get_maya_main_window():
     win = omui.MQtUtil_mainWindow()
-    # memory address
+    # return QWidget pointer to Maya's main window, a memory address of main window
     ptr = wrapInstance(long(win), QtWidgets.QMainWindow)
+    # this convert win to something python can understand, in this case it's QMainWindow
     return ptr
 
 
 def get_dock(name='LightingManagerDock'):
     del_dock(name)
     ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label="Lighting Manager")
+    # workspaceControl
+    # ->create and manages the widget used to host windows which enables docking and stacking in windows
+
+    # dockToMainWindow
+    # ->dock this workspace control into the main window. the first args is dock position along the side
+    # second args is the control should be tabbed into the first control found at the dock position
+
     qt_control = omui.MQtUtil_findControl(ctrl)
+    # Pointer to the control's underlying QWidget. Returns NULL if the control is not found.
     ptr = wrapInstance(long(qt_control), QtWidgets.QWidget)
+    # convert to QWidgets
     return ptr
 
 
 def del_dock(name='LightingManagerDock'):
     if pm.workspaceControl(name, query=True, exists=True):
+        # return full path name to the control
         pm.deleteUI(name)
 
 
@@ -214,8 +225,8 @@ class LightWidget(QtWidgets.QWidget):
         pm.delete(self.light.getTransform())
 
 
-def show_ui():
-    ui = LightManager()
-    ui.show()
-    return ui
-
+# def show_ui():
+#     ui = LightManager()
+#     ui.show()
+#     return ui
+# because of using dock, this variable no more needed maya will maintain UI
