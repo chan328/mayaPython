@@ -1,8 +1,11 @@
+import time
 from Qt import QtWidgets, QtCore, QtGui
 from functools import partial
 import Qt
 import logging
 from maya import OpenMayaUI as omui
+import json
+import os
 
 logging.basicConfig()
 logger = logging.getLogger('LightingManager')
@@ -105,11 +108,11 @@ class LightManager(QtWidgets.QWidget):
         self.lightTypeCB = QtWidgets.QComboBox()
         for lightType in sorted(self.lightTypes):
             self.lightTypeCB.addItem(lightType)
-        layout.addWidget(self.lightTypeCB, 0, 0)
+        layout.addWidget(self.lightTypeCB, 0, 0, 1, 2)
 
         create_button = QtWidgets.QPushButton('Create')
         create_button.clicked.connect(self.create_light)
-        layout.addWidget(create_button, 0, 1)
+        layout.addWidget(create_button, 0, 2)
         # row 0 column 1
 
         scroll_widget = QtWidgets.QWidget()
@@ -119,11 +122,19 @@ class LightManager(QtWidgets.QWidget):
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(scroll_widget)
-        layout.addWidget(scroll_area, 1, 0, 1, 2)
+        layout.addWidget(scroll_area, 1, 0, 1, 3)
+
+        save_button = QtWidgets.QPushButton('Save')
+        save_button.clicked.connect(self.save_light)
+        layout.addWidget(save_button, 2, 0)
+
+        import_button = QtWidgets.QPushButton('Import')
+        import_button.clicked.connect(self.import_light)
+        layout.addWidget(import_button, 2, 1)
 
         refresh_button = QtWidgets.QPushButton('Refresh')
         refresh_button.clicked.connect(self.populate)
-        layout.addWidget(refresh_button, 2, 1)
+        layout.addWidget(refresh_button, 2, 2)
 
     def create_light(self):
         light_type = self.lightTypeCB.currentText()
@@ -136,6 +147,35 @@ class LightManager(QtWidgets.QWidget):
         widget = LightWidget(light)
         self.scrollLayout.addWidget(widget)
         widget.on_solo.connect(self.on_solo)
+
+    def save_light(self):
+        properties = {}
+
+        for light_widget in self.findChildren(LightWidget):
+            light = light_widget.light
+            transform = light.getTransform()
+
+            properties[str(transform)] = {
+                'translate': list(transform.translate.get()),
+                'rotation': list(transform.rotate.get()),
+                'lightType': pm.objectType(light),
+                'intensity': light.intensity.get(),
+                'color': light.color.get()
+            }
+
+        directory = os.path.join(pm.internalVar(userAppDir=True), 'lightManager')
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        light_file = os.path.join(directory, 'lightFile_%s.json' % time.strftime('%m%d'))
+        # time module give file unique name
+        with open(light_file, 'w') as f:
+            json.dump(properties, f, indent=4)
+
+        logger.info('Saving file to %s' % light_file)
+
+    def import_light(self):
+        pass
 
     def on_solo(self, value):
         light_widgets = self.findChildren(LightWidget)
