@@ -136,12 +136,16 @@ class LightManager(QtWidgets.QWidget):
         refresh_button.clicked.connect(self.populate)
         layout.addWidget(refresh_button, 2, 2)
 
-    def create_light(self):
-        light_type = self.lightTypeCB.currentText()
+    def create_light(self, light_type=None, add=True):
+        if not light_type:
+            light_type = self.lightTypeCB.currentText()
         func = self.lightTypes[light_type]
 
         light = func()
-        self.add_light(light)
+        if add:
+            self.add_light(light)
+
+        return light
 
     def add_light(self, light):
         widget = LightWidget(light)
@@ -163,9 +167,7 @@ class LightManager(QtWidgets.QWidget):
                 'color': light.color.get()
             }
 
-        directory = os.path.join(pm.internalVar(userAppDir=True), 'lightManager')
-        if not os.path.exists(directory):
-            os.mkdir(directory)
+        directory = self.get_directory()
 
         light_file = os.path.join(directory, 'lightFile_%s.json' % time.strftime('%m%d'))
         # time module give file unique name
@@ -174,8 +176,40 @@ class LightManager(QtWidgets.QWidget):
 
         logger.info('Saving file to %s' % light_file)
 
+    def get_directory(self):
+        directory = os.path.join(pm.internalVar(userAppDir=True), 'lightManager')
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        return directory
+
     def import_light(self):
-        pass
+        directory = self.get_directory()
+        file_name = QtWidgets.QFileDialog.getOpenFileNames(self, "Light Browser", directory)
+        file_dir = str(file_name[0][0])
+        with open(file_dir, 'r') as f:
+            properties = json.load(f)
+
+        print(type(properties))
+
+        for light, info, in properties.items():
+            light_type = info.get('lightType')
+            for lt in self.lightTypes:
+                if '%sLight' % lt.split()[0].lower():
+                    break
+            else:
+                logger.info('Cannot find    a corresponding light Type for %s (%s)' % (light, light_type))
+                continue
+
+            light = self.create_light(light_type=lt)
+            light.intensity.set(info.get('intensity'))
+
+            light.color.set(info.get('color'))
+
+            transform = light.getTransform()
+            transform.translate.set(info.get('translate'))
+            transform.rotate.set(info.get('rotation'))
+
+        self.populate()
 
     def on_solo(self, value):
         light_widgets = self.findChildren(LightWidget)
@@ -192,6 +226,8 @@ class LightWidget(QtWidgets.QWidget):
         super(LightWidget, self).__init__()
         if isinstance(light, str):
             light = pm.PyNode(light)
+        if isinstance(light, pm.nodeTypes.Trnasform):
+            light = light.getShape()
 
         self.light = light
         self.build_ui()
